@@ -55,6 +55,7 @@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
+#include <sys/time.h>
 
 #include "BCUnit.h"
 #include "TestDB.h"
@@ -83,7 +84,10 @@ static CU_BOOL	 bPartialSuiteJUnitReport = CU_FALSE;		/** Flag for toggling engl
 
 static char _gPackageName[50] = "";
 
-static time_t    f_testStartTime = 0;                       /**< Start time of current running test suite. */
+//static time_t    f_testStartTime = 0;                       /**< Start time of current running test suite. */
+
+static struct timeval f_testStartTime;
+static struct timeval f_testEndTime;
 
 /*=================================================================
  *  Static function forward declarations
@@ -268,7 +272,12 @@ static void automated_test_start_message_handler(const CU_pTest pTest, const CU_
 	char *szTempName = NULL;
 	size_t szTempName_len = 0;
 
-  f_testStartTime = time(NULL);
+
+  time_t startTime = time(NULL);
+  struct tm tm = *localtime(&startTime);
+
+  /*time struct initialisation*/
+  gettimeofday(&f_testStartTime, NULL);
 
   if( test_start_handler ){
     (*test_start_handler)(pTest, pSuite);
@@ -301,11 +310,18 @@ static void automated_test_start_message_handler(const CU_pTest pTest, const CU_
 
     if (bJUnitXmlOutput == CU_TRUE) {
       fprintf(f_pTestResultFile,
-              "  <testsuite name=\"%s\" tests=\"%u\" time=\"0\" failures=\"%u\" errors=\"%u\" skipped=\"0\"> \n",
+              "  <testsuite name=\"%s\" tests=\"%u\" time=\"0\" failures=\"%u\" errors=\"%u\" skipped=\"0\" timestamp=\"%d-%02d-%02dT%02d:%02d:%02d\"> \n",
               (NULL != szTempName) ? szTempName : "", /* Name */
               pSuite->uiNumberOfTests, /* Tests */
               pSuite->uiNumberOfTestsFailed, /* Tests failure */
-              0); /* Errors */
+              0,
+              tm.tm_year + 1900,
+              tm.tm_mon + 1,
+              tm.tm_mday,
+              tm.tm_hour,
+              tm.tm_min,
+              tm.tm_sec
+              ); /* Errors */
     } else {
       fprintf(f_pTestResultFile,
               "    <BCUNIT_RUN_SUITE> \n"
@@ -339,6 +355,9 @@ static void automated_test_complete_message_handler(const CU_pTest pTest,
   CU_pFailureRecord pTempFailure = pFailure;
   const char *pPackageName = CU_automated_package_name_get();
 
+  /*time struct initialisation*/
+  gettimeofday(&f_testEndTime, NULL);
+
   if( test_complete_handler ){
     (*test_complete_handler)(pTest, pSuite, pFailure);
   }
@@ -366,12 +385,24 @@ static void automated_test_complete_message_handler(const CU_pTest pTest,
           szTemp[0] = '\0';
         }
 
-        fprintf(f_pTestResultFile, "        <testcase classname=\"%s.%s\" name=\"%s\" time=\"%ld\">\n",
+        fprintf(f_pTestResultFile, "        <testcase classname=\"%s.%s\" name=\"%s\" time=\"%lu.%lu\">\n",
                 pPackageName,
                 pSuite->pName,
                 (NULL != pTest->pName) ? pTest->pName : "",
-                (long)(time(NULL) - f_testStartTime));
-        fprintf(f_pTestResultFile, "            <failure message=\"%s\" type=\"Failure\">\n", szTemp);
+                f_testEndTime.tv_sec-f_testStartTime.tv_sec,
+                f_testEndTime.tv_usec-f_testStartTime.tv_usec
+                );
+
+        //previously, szTemp vas displayed instead of pTempFailure->strCondition in the failure message. Why ???
+        //There is corrently no case of special characters not handled and szTemp seems to be null at this time.
+        if(NULL != pTempFailure->pNext) {
+          fprintf(f_pTestResultFile, "            <failure message=\"Multiple asserts failed ...\" type=\"Failure\">\n");
+        }
+        else {
+          fprintf(f_pTestResultFile, "            <failure message=\"%s\" type=\"Failure\">\n", pTempFailure->strCondition);
+        }
+
+
       } /* if */
     }
 
@@ -432,11 +463,13 @@ static void automated_test_complete_message_handler(const CU_pTest pTest,
   }
   else {
     if (bJUnitXmlOutput == CU_TRUE) {
-      fprintf(f_pTestResultFile,  "        <testcase classname=\"%s.%s\" name=\"%s\" time=\"%ld\"/>\n",
+      fprintf(f_pTestResultFile,  "        <testcase classname=\"%s.%s\" name=\"%s\" time=\"%lu.%lu\"/>\n",
               pPackageName,
               pSuite->pName,
               (NULL != pTest->pName) ? pTest->pName : "",
-              (long)(time(NULL) - f_testStartTime));
+              f_testEndTime.tv_sec-f_testStartTime.tv_sec,
+              f_testEndTime.tv_usec-f_testStartTime.tv_usec
+              );
     } else {
       fprintf(f_pTestResultFile,
               "        <BCUNIT_RUN_TEST_RECORD> \n"
