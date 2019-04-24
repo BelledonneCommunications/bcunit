@@ -308,10 +308,11 @@ static void automated_test_start_message_handler(const CU_pTest pTest, const CU_
 	char *szTempName = NULL;
 	size_t szTempName_len = 0;
 
-
+  //Gathering information about current time for the suite start time
   time_t suiteStartTime = time(NULL);
   struct tm tm = *localtime(&suiteStartTime);
 
+  //Getting the start time of the test to compute test duration
   startTime = get_wall_time();
 
   if( test_start_handler ){
@@ -390,6 +391,7 @@ static void automated_test_complete_message_handler(const CU_pTest pTest,
   CU_pFailureRecord pTempFailure = pFailure;
   const char *pPackageName = CU_automated_package_name_get();
 
+  //Getting the end time of the test to compute test duration
   endTime = get_wall_time();
 
   if( test_complete_handler ){
@@ -462,7 +464,6 @@ static void automated_test_complete_message_handler(const CU_pTest pTest,
       /* convert xml entities in strCondition (if present) */
       if (NULL != pTempFailure->strCondition) {
         CU_translate_special_characters(pTempFailure->strCondition, szTemp, szTemp_len);
-        printf("DEBUG 2 szTEMp = %s\n", szTemp);
       }
       else {
         szTemp[0] = '\0';
