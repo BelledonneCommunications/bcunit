@@ -55,7 +55,6 @@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
-#include <sys/time.h>
 
 #include "BCUnit.h"
 #include "TestDB.h"
@@ -86,8 +85,8 @@ static char _gPackageName[50] = "";
 
 //static time_t    f_testStartTime = 0;                       /**< Start time of current running test suite. */
 
-static struct timeval f_testStartTime;
-static struct timeval f_testEndTime;
+double startTime = 0.0;
+double endTime = 0.0;
 
 /*=================================================================
  *  Static function forward declarations
@@ -110,6 +109,43 @@ CU_TestCompleteMessageHandler        test_complete_handler;
 CU_AllTestsCompleteMessageHandler    all_test_complete_handler;
 CU_SuiteInitFailureMessageHandler    suite_init_failure_handler;
 CU_SuiteCleanupFailureMessageHandler suite_cleanup_failure_handler;
+
+
+/*=================================================================
+ *  Time management, prevents to add a dependency towards bctoolbox
+ *=================================================================*/
+
+//  Windows
+#ifdef _WIN32
+  #include <Windows.h>
+  double get_wall_time(){
+      LARGE_INTEGER time,freq;
+      if (!QueryPerformanceFrequency(&freq)) {
+         //  Handle error
+         return 0;
+      }
+      else if (!QueryPerformanceCounter(&time)) {
+         //  Handle error
+         return 0;
+      }
+      else {
+        return (double)time.QuadPart / freq.QuadPart;
+      }
+  }
+#else
+  //#include <time.h>
+  #include <sys/time.h>
+  double get_wall_time() {
+      struct timeval time;
+      if (gettimeofday(&time,NULL)) {
+          //  Handle error
+          return 0;
+      }
+      //tv_usec is divided by a million to get as a double [seconds].[milliseconds]
+      return (double)time.tv_sec + (double)time.tv_usec * .000001;
+  }
+#endif
+
 
 /*=================================================================
  *  Public Interface functions
@@ -273,11 +309,10 @@ static void automated_test_start_message_handler(const CU_pTest pTest, const CU_
 	size_t szTempName_len = 0;
 
 
-  time_t startTime = time(NULL);
-  struct tm tm = *localtime(&startTime);
+  time_t suiteStartTime = time(NULL);
+  struct tm tm = *localtime(&suiteStartTime);
 
-  /*time struct initialisation*/
-  gettimeofday(&f_testStartTime, NULL);
+  startTime = get_wall_time();
 
   if( test_start_handler ){
     (*test_start_handler)(pTest, pSuite);
@@ -355,8 +390,7 @@ static void automated_test_complete_message_handler(const CU_pTest pTest,
   CU_pFailureRecord pTempFailure = pFailure;
   const char *pPackageName = CU_automated_package_name_get();
 
-  /*time struct initialisation*/
-  gettimeofday(&f_testEndTime, NULL);
+  endTime = get_wall_time();
 
   if( test_complete_handler ){
     (*test_complete_handler)(pTest, pSuite, pFailure);
@@ -387,14 +421,13 @@ static void automated_test_complete_message_handler(const CU_pTest pTest,
           szTemp[0] = '\0';
         }
 
-        fprintf(f_pTestResultFile, "        <testcase classname=\"%s.%s\" name=\"%s\" time=\"%lu.%lu\">\n",
+        fprintf(f_pTestResultFile, "        <testcase classname=\"%s.%s\" name=\"%s\" time=\"%f\">\n",
                 pPackageName,
                 pSuite->pName,
                 (NULL != pTest->pName) ? pTest->pName : "",
-                f_testEndTime.tv_sec-f_testStartTime.tv_sec,
-                f_testEndTime.tv_usec-f_testStartTime.tv_usec
+                endTime - startTime
                 );
-                
+
         if(NULL != pTempFailure->pNext) {
           fprintf(f_pTestResultFile, "            <failure message=\"Multiple asserts failed ...\" type=\"Failure\">\n");
         }
@@ -464,12 +497,11 @@ static void automated_test_complete_message_handler(const CU_pTest pTest,
   }
   else {
     if (bJUnitXmlOutput == CU_TRUE) {
-      fprintf(f_pTestResultFile,  "        <testcase classname=\"%s.%s\" name=\"%s\" time=\"%lu.%lu\"/>\n",
+      fprintf(f_pTestResultFile,  "        <testcase classname=\"%s.%s\" name=\"%s\" time=\"%f\"/>\n",
               pPackageName,
               pSuite->pName,
               (NULL != pTest->pName) ? pTest->pName : "",
-              f_testEndTime.tv_sec-f_testStartTime.tv_sec,
-              f_testEndTime.tv_usec-f_testStartTime.tv_usec
+              endTime - startTime
               );
     } else {
       fprintf(f_pTestResultFile,
