@@ -378,10 +378,12 @@ static void automated_test_complete_message_handler(const CU_pTest pTest,
         assert((NULL != pTempFailure->pTest) && (pTempFailure->pTest == pTest));
 
         if (NULL != pTempFailure->strCondition) {
-          szTemp = (char *)CU_MALLOC(CU_translated_strlen(pTempFailure->strCondition));
-          CU_translate_special_characters(pTempFailure->strCondition, szTemp, sizeof(szTemp));
+          szTemp_len = CU_translated_strlen(pTempFailure->strCondition) + 1;
+          szTemp = (char *)CU_MALLOC(szTemp_len);
+          size_t test = CU_translate_special_characters(pTempFailure->strCondition, szTemp, szTemp_len);
         }
         else {
+          //!!!!!!
           szTemp[0] = '\0';
         }
 
@@ -392,14 +394,12 @@ static void automated_test_complete_message_handler(const CU_pTest pTest,
                 f_testEndTime.tv_sec-f_testStartTime.tv_sec,
                 f_testEndTime.tv_usec-f_testStartTime.tv_usec
                 );
-
-        //previously, szTemp vas displayed instead of pTempFailure->strCondition in the failure message. Why ???
-        //There is corrently no case of special characters not handled and szTemp seems to be null at this time.
+                
         if(NULL != pTempFailure->pNext) {
           fprintf(f_pTestResultFile, "            <failure message=\"Multiple asserts failed ...\" type=\"Failure\">\n");
         }
         else {
-          fprintf(f_pTestResultFile, "            <failure message=\"%s\" type=\"Failure\">\n", pTempFailure->strCondition);
+          fprintf(f_pTestResultFile, "            <failure message=\"%s\" type=\"Failure\">\n", szTemp);
         }
 
 
@@ -429,6 +429,7 @@ static void automated_test_complete_message_handler(const CU_pTest pTest,
       /* convert xml entities in strCondition (if present) */
       if (NULL != pTempFailure->strCondition) {
         CU_translate_special_characters(pTempFailure->strCondition, szTemp, szTemp_len);
+        printf("DEBUG 2 szTEMp = %s\n", szTemp);
       }
       else {
         szTemp[0] = '\0';
