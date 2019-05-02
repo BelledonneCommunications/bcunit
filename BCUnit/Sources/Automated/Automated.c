@@ -110,43 +110,6 @@ CU_AllTestsCompleteMessageHandler    all_test_complete_handler;
 CU_SuiteInitFailureMessageHandler    suite_init_failure_handler;
 CU_SuiteCleanupFailureMessageHandler suite_cleanup_failure_handler;
 
-
-/*=================================================================
- *  Time management, prevents to add a dependency towards bctoolbox
- *=================================================================*/
-
-//  Windows
-#ifdef _WIN32
-  #include <Windows.h>
-  double get_wall_time(){
-      LARGE_INTEGER time,freq;
-      if (!QueryPerformanceFrequency(&freq)) {
-         //  Handle error
-         return 0;
-      }
-      else if (!QueryPerformanceCounter(&time)) {
-         //  Handle error
-         return 0;
-      }
-      else {
-        return (double)time.QuadPart / freq.QuadPart;
-      }
-  }
-#else
-  //#include <time.h>
-  #include <sys/time.h>
-  double get_wall_time() {
-      struct timeval time;
-      if (gettimeofday(&time,NULL)) {
-          //  Handle error
-          return 0;
-      }
-      //tv_usec is divided by a million to get as a double [seconds].[milliseconds]
-      return (double)time.tv_sec + (double)time.tv_usec * .000001;
-  }
-#endif
-
-
 /*=================================================================
  *  Public Interface functions
  *=================================================================*/
@@ -313,7 +276,7 @@ static void automated_test_start_message_handler(const CU_pTest pTest, const CU_
   struct tm tm = *localtime(&suiteStartTime);
 
   //Getting the start time of the test to compute test duration
-  startTime = get_wall_time();
+  startTime = CU_get_wall_time();
 
   if( test_start_handler ){
     (*test_start_handler)(pTest, pSuite);
@@ -392,7 +355,7 @@ static void automated_test_complete_message_handler(const CU_pTest pTest,
   const char *pPackageName = CU_automated_package_name_get();
 
   //Getting the end time of the test to compute test duration
-  endTime = get_wall_time();
+  endTime = CU_get_wall_time();
 
   if( test_complete_handler ){
     (*test_complete_handler)(pTest, pSuite, pFailure);
