@@ -172,6 +172,11 @@ endif()
 if(ENABLE_SHARED)
 	add_library(bcunit SHARED ${SOURCE_FILES})
 	set_target_properties(bcunit PROPERTIES VERSION 1.0.1)
+	target_include_directories(bcunit PUBLIC
+		$<INSTALL_INTERFACE:include>
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/BCUnit/Headers/>
+		$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/BCUnit/Headers/>
+	)
 	if(CURSES_LIBRARIES)
 		target_link_libraries(bcunit ${CURSES_LIBRARIES})
 	endif()

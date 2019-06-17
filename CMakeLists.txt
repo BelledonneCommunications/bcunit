@@ -88,11 +88,10 @@ endif()
 add_subdirectory(build)
 
 include_directories(
-	BCUnit/Headers
-	${CMAKE_CURRENT_BINARY_DIR}
-	${CMAKE_CURRENT_BINARY_DIR}/BCUnit/Headers
+# 	BCUnit/Headers
+ 	${CMAKE_CURRENT_BINARY_DIR}
+# 	${CMAKE_CURRENT_BINARY_DIR}/BCUnit/Headers
 )
-
 
 add_subdirectory(BCUnit)
 if(ENABLE_DOC)
@@ -106,6 +105,7 @@ endif()
 
 
 include(CMakePackageConfigHelpers)
+set(CONFIG_PACKAGE_LOCATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/cmake")
 write_basic_package_version_file(
 	"${CMAKE_CURRENT_BINARY_DIR}/BcUnitConfigVersion.cmake"
 	VERSION ${PACKAGE_VERSION}
@@ -114,9 +114,13 @@ write_basic_package_version_file(
 export(EXPORT BcUnitTargets
 	FILE "${CMAKE_CURRENT_BINARY_DIR}/BcUnitTargets.cmake"
 )
-configure_file(BcUnitConfig.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/BcUnitConfig.cmake" @ONLY)
 
-set(CONFIG_PACKAGE_LOCATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/cmake")
+configure_package_config_file(BcUnitConfig.cmake.in
+	"${CMAKE_CURRENT_BINARY_DIR}/BcUnitConfig.cmake"
+  	INSTALL_DESTINATION ${CONFIG_PACKAGE_LOCATION}
+	NO_SET_AND_CHECK_MACRO
+)
+
 install(EXPORT BcUnitTargets
 	FILE BcUnitTargets.cmake
 	DESTINATION ${CONFIG_PACKAGE_LOCATION}
