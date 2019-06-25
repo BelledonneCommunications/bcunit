@@ -88,9 +88,7 @@ endif()
 add_subdirectory(build)
 
 include_directories(
-# 	BCUnit/Headers
  	${CMAKE_CURRENT_BINARY_DIR}
-# 	${CMAKE_CURRENT_BINARY_DIR}/BCUnit/Headers
 )
 
 add_subdirectory(BCUnit)
