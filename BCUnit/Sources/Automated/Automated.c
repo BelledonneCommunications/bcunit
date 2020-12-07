@@ -309,11 +309,12 @@ static void automated_test_start_message_handler(const CU_pTest pTest, const CU_
 
     if (bJUnitXmlOutput == CU_TRUE) {
       fprintf(f_pTestResultFile,
-              "  <testsuite name=\"%s\" tests=\"%u\" time=\"0\" failures=\"%u\" errors=\"%u\" skipped=\"0\" timestamp=\"%d-%02d-%02dT%02d:%02d:%02d\"> \n",
+              "  <testsuite name=\"%s\" tests=\"%u\" time=\"0\" failures=\"%u\" errors=\"%u\" skipped=\"0\" package=\"%s\" timestamp=\"%d-%02d-%02dT%02d:%02d:%02d\"> \n",
               (NULL != szTempName) ? szTempName : "", /* Name */
               pSuite->uiNumberOfTests, /* Tests */
               pSuite->uiNumberOfTestsFailed, /* Tests failure */
               0,
+							(NULL != szTempName) ? szTempName : "", /* Same as Name, just to satisfy picky parsers */
               tm.tm_year + 1900,
               tm.tm_mon + 1,
               tm.tm_mday,
