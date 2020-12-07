@@ -85,6 +85,8 @@ static char _gPackageName[50] = "";
 
 //static time_t    f_testStartTime = 0;                       /**< Start time of current running test suite. */
 
+unsigned int suiteId = 0;
+
 double startTime = 0.0;
 double endTime = 0.0;
 
@@ -309,7 +311,8 @@ static void automated_test_start_message_handler(const CU_pTest pTest, const CU_
 
     if (bJUnitXmlOutput == CU_TRUE) {
       fprintf(f_pTestResultFile,
-              "  <testsuite name=\"%s\" tests=\"%u\" time=\"0\" failures=\"%u\" errors=\"%u\" skipped=\"0\" package=\"%s\" timestamp=\"%d-%02d-%02dT%02d:%02d:%02d\"> \n",
+              "  <testsuite id=\"%u\" name=\"%s\" tests=\"%u\" time=\"0\" failures=\"%u\" errors=\"%u\" skipped=\"0\" package=\"%s\" timestamp=\"%d-%02d-%02dT%02d:%02d:%02d\"> \n",
+							++suiteId,
               (NULL != szTempName) ? szTempName : "", /* Name */
               pSuite->uiNumberOfTests, /* Tests */
               pSuite->uiNumberOfTestsFailed, /* Tests failure */
